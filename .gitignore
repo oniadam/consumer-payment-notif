@@ -1,0 +1,13 @@
+# Ignore .env file (environment variables)
+.env
+
+# Ignore all .exe files (compiled binaries)
+*.exe
+
+logs/
+.vscode/
+
+# OPTIONAL: Ignore go.mod and go.sum (Not recommended for Go projects)
+# Uncomment the lines below if you really want to ignore them
+# go.mod
+# go.sum
