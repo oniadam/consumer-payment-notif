@@ -2,17 +2,36 @@ package services
 
 import (
 	"consumer-payment-notif/models"
+	"consumer-payment-notif/repo"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/go-resty/resty/v2"
 )
 
 func NotifPaymentWa(aggrno string, datareceice string, req models.NotifPaymentWa) (res models.Respons, err error) {
+	timeStr := time.Now().Format("2006-01-02 15:04:05")
+	totpaid := fmt.Sprintf("%v", req.TotalPaid)
+	insPaymentNotifWa, errinsPaymentNotifWa := repo.InsertPaymentNotifWaRepo(req.Senddtm, req.Sendby, req.WaNo, req.Templatecode, req.AggrNo, req.CustomerName, totpaid, req.TransactionSrc, req.Paymentmetodcode, req.Refno, req.Filepath, req.Flagreversal, req.Createdby, req.Createddtm)
+	if errinsPaymentNotifWa != nil {
+		res = models.Respons{
+			ResponseCode:      insPaymentNotifWa.ResponseCode,
+			ResponseMessage:   insPaymentNotifWa.ResponseMessage,
+			ResponseTimestamp: timeStr,
+			Errors:            errinsPaymentNotifWa.Error() + "Sp Insert Reminder",
+			Data:              nil,
+		}
 
-	bodyMsg := "Pembayaran Anda dengan No Kontrak " + req.AggrNo + " telah terbayarkan senilai Rp. " + req.Amount
+		// c.JSON(500, res)
+
+		return res, errinsPaymentNotifWa
+	}
+
+	bodyMsg := "Hallo " + req.CustomerName + ", Pembayaran Anda dengan No Kontrak " + req.AggrNo + " telah terbayarkan senilai Rp. " + totpaid
 
 	reqtometa := models.InstReqToMeta{
 		MessagingProduct: "whatsapp",
@@ -27,6 +46,8 @@ func NotifPaymentWa(aggrno string, datareceice string, req models.NotifPaymentWa
 	log.Println("req to meta", string(jsnLogMeta))
 
 	resfrmeta := models.ResFrMeta{}
+
+	// save req data meta ke db
 
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
@@ -54,6 +75,22 @@ func NotifPaymentWa(aggrno string, datareceice string, req models.NotifPaymentWa
 	}
 
 	if resSendReminder.StatusCode() != 200 {
+
+		jsnResMeta, _ := json.Marshal(resfrmeta)
+		_, errUpdate := repo.UpdatePaymentNotifWaRepo(fmt.Sprintf("%v", insPaymentNotifWa.Data), "1", "", "system", time.Now().Format("2006-01-02 15:04:05.000"), strconv.Itoa(resSendReminder.StatusCode()), string(jsnResMeta))
+
+		if errUpdate != nil {
+			res = models.Respons{
+				ResponseCode:      "500",
+				ResponseMessage:   "Internal Server Error",
+				ResponseTimestamp: time.Now().Format("2006-01-02 15:04:05"),
+				Errors:            "Error Query Update " + errUpdate.Error(),
+				Data:              nil,
+			}
+			// c.JSON(http.StatusInternalServerError, res)
+			return res, err
+		}
+
 		res = models.Respons{
 			ResponseCode:      "500",
 			ResponseMessage:   "Internal Server Error",
@@ -67,6 +104,23 @@ func NotifPaymentWa(aggrno string, datareceice string, req models.NotifPaymentWa
 
 	jsnResMeta, _ := json.Marshal(resfrmeta)
 	log.Println("res fr meta", string(jsnResMeta))
+
+	// update req data meta ke db
+	chatid := resfrmeta.Messages[0].ID
+
+	_, errUpdate := repo.UpdatePaymentNotifWaRepo(fmt.Sprintf("%v", insPaymentNotifWa.Data), "0", chatid, "system", time.Now().Format("2006-01-02 15:04:05.000"), strconv.Itoa(resSendReminder.StatusCode()), string(jsnResMeta))
+
+	if errUpdate != nil {
+		res = models.Respons{
+			ResponseCode:      "500",
+			ResponseMessage:   "Internal Server Error",
+			ResponseTimestamp: time.Now().Format("2006-01-02 15:04:05"),
+			Errors:            "Error Query Update " + errUpdate.Error(),
+			Data:              nil,
+		}
+		// c.JSON(http.StatusInternalServerError, res)
+		return res, err
+	}
 
 	res = models.Respons{
 		ResponseCode:      "200",

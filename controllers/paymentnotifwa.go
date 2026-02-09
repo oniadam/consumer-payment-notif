@@ -38,7 +38,9 @@ func PaymentNotifWa(ch *amqp.Channel, logger *log.Logger) {
 		}
 		datareceive := string(d.Body)
 		resp, errSend := services.NotifPaymentWa(data.AggrNo, datareceive, data)
-		fmt.Println("wefhwoehfowiehofwihefwe", resp.ResponseCode)
+		fmt.Println("wefhwoehfowiehofwihefwewa", resp.ResponseCode)
+		fmt.Println("wefhwoehfowiehofwihefwewa", resp.ResponseMessage)
+		fmt.Println("wefhwoehfowiehofwihefwewa", resp.Errors)
 		if errSend != nil {
 			logger.Println(errSend.Error())
 			d.Nack(false, true)

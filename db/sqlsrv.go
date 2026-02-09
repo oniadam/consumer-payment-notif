@@ -34,3 +34,16 @@ func GetsSQLsrvDB2() (*sql.DB, error) {
 	return conn, nil
 
 }
+
+func GetsSQLsrvDB3() (*sql.DB, error) {
+
+	connString := fmt.Sprintf("server=%s;user id=%s;password=%s;port=%s;database=%s;",
+		os.Getenv("server3"), os.Getenv("user3"), os.Getenv("password3"), os.Getenv("port3"), os.Getenv("database3"))
+	conn, errCon := sql.Open("mssql", connString)
+	if errCon != nil {
+		log.Fatal("Open connection failed:", errCon.Error())
+	}
+	fmt.Println("connected")
+	return conn, nil
+
+}
