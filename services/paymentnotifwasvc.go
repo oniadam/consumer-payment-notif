@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"strconv"
 	"time"
 
@@ -57,10 +58,10 @@ func NotifPaymentWa(aggrno string, datareceice string, req models.NotifPaymentWa
 		SetContext(ctx).
 		SetBody(&reqtometa).
 		SetHeader("Content-Type", "application/json").
-		SetHeader("Authorization", "Bearer EAATl4Ljd4UoBP3ZAeNMSRibZAwh1ucXHeu0hZBnqU3m9Gnv6UvymP7ZBqPFxYCMQHnzURqRfPcfhji2ZAKga65q1wjLS8B0pPkwFo4DZC5iVqnDeXH6ippO4XLAcEJrIg7S7loC1TTZCjLpo7jd8VZA0Kcxi41FlxfV7NLNvjS5XjpqlEqm1G8hg2GHvUYvmWdxy5wZDZD").
+		SetHeader("Authorization", os.Getenv("token_meta")).
 		SetResult(&resfrmeta).
 		// SetError(&resfrmetaerr).
-		Post("https://graph.facebook.com/v22.0/860450543810738/messages")
+		Post(os.Getenv("url_meta"))
 
 	if errSend != nil {
 		res = models.Respons{
@@ -73,6 +74,9 @@ func NotifPaymentWa(aggrno string, datareceice string, req models.NotifPaymentWa
 		// c.JSON(http.StatusInternalServerError, res)
 		return res, errSend
 	}
+
+	jsnResMeta, _ := json.Marshal(resfrmeta)
+	log.Println("res fr meta", string(jsnResMeta))
 
 	if resSendReminder.StatusCode() != 200 {
 
@@ -101,9 +105,6 @@ func NotifPaymentWa(aggrno string, datareceice string, req models.NotifPaymentWa
 		// c.JSON(http.StatusInternalServerError, res)
 		return res, err
 	}
-
-	jsnResMeta, _ := json.Marshal(resfrmeta)
-	log.Println("res fr meta", string(jsnResMeta))
 
 	// update req data meta ke db
 	chatid := resfrmeta.Messages[0].ID
