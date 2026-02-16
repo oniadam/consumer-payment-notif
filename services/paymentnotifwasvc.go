@@ -32,7 +32,17 @@ func NotifPaymentWa(aggrno string, datareceice string, req models.NotifPaymentWa
 		return res, errinsPaymentNotifWa
 	}
 
-	bodyMsg := "Hallo " + req.CustomerName + ", Pembayaran Anda dengan No Kontrak " + req.AggrNo + " telah terbayarkan senilai Rp. " + totpaid
+	bodyMsg := ""
+	if req.Flagreversal == "0" {
+		// call sp utk get no reff
+		datawano, _, _ := repo.GetReffNo(req.Refno)
+		req.Refno = datawano.ReffNo
+
+		bodyMsg = "Pembayaran angsuran Esta Dana Ventura Ibu " + req.CustomerName + " dengan no perjanjian " + req.AggrNo + " tanggal " + req.Senddtm + " sebesar " + fmt.Sprintf("%v", req.TotalPaid) + " (no transaksi " + req.Refno + " ) telah diterima. Untuk riwayat pembayaran dapat dilihat pada aplikasi MyEsta, Informasi lebih lanjut serta penyampaian pertanyaan atau keluhan, silahkan menghubungi Whatsapp di no nomor 081212xxxx"
+	} else {
+		bodyMsg = "Pembayaran angsuran Esta Dana Ventura Ibu " + req.CustomerName + " dengan no perjanjian " + req.AggrNo +
+			" tanggal " + req.Senddtm + " sebesar " + fmt.Sprintf("%v", req.TotalPaid) + " (no transaksi " + req.Refno + " ) gagal tranksasi. Untuk riwayat pembayaran dapat dilihat pada aplikasi MyEsta, Informasi lebih lanjut serta penyampaian pertanyaan atau keluhan, silahkan menghubungi Whatsapp di no nomor 081212xxxx"
+	}
 
 	reqtometa := models.InstReqToMeta{
 		MessagingProduct: "whatsapp",
