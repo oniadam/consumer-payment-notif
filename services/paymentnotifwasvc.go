@@ -14,7 +14,8 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
-func NotifPaymentWa(aggrno string, datareceice string, req models.NotifPaymentWa) (res models.Respons, err error) {
+func NotifPaymentWa(aggrno string, datareceice string, req models.NotifPaymentWa, logger *log.Logger) (res models.Respons, err error) {
+	timeStr := time.Now().Format("2006-01-02 15:04:05")
 	var datawano models.GetWaNoRes
 	if req.WaNo == "null" || req.WaNo == "" {
 		datawano, _, _ = repo.GetWaNo(req.AggrNo)
@@ -22,9 +23,36 @@ func NotifPaymentWa(aggrno string, datareceice string, req models.NotifPaymentWa
 		datawano.WaNo.String = req.WaNo
 	}
 
-	timeStr := time.Now().Format("2006-01-02 15:04:05")
+	if req.Createddtm == "" {
+		req.Createddtm = timeStr
+	}
+
+	layout := "2006-01-02 15:04:05"
+
+	t, err := time.Parse(layout, req.Senddtm)
+	if err != nil {
+		t, err = time.Parse(time.RFC3339Nano, req.Senddtm)
+		if err != nil {
+			res = models.Respons{
+				ResponseCode:      "500",
+				ResponseMessage:   "Error Parse Time ",
+				ResponseTimestamp: timeStr,
+				Errors:            err.Error() + "Parse",
+				Data:              nil,
+			}
+
+			return res, err
+		}
+
+	}
+
+	// format sesuai kebutuhan
+	outputsenddtm := t.Format("2006-01-02 15:04:05")
+	// fmt.Println(output)
+
 	totpaid := fmt.Sprintf("%v", req.TotalPaid)
-	insPaymentNotifWa, errinsPaymentNotifWa := repo.InsertPaymentNotifWaRepo(req.Senddtm, req.Sendby, datawano.WaNo.String, req.Templatecode, req.AggrNo, req.CustomerName, totpaid, req.TransactionSrc, req.Paymentmetodcode, req.Refno, req.Filepath, req.Flagreversal, req.Createdby, req.Createddtm)
+
+	insPaymentNotifWa, errinsPaymentNotifWa := repo.InsertPaymentNotifWaRepo(outputsenddtm, req.Sendby, datawano.WaNo.String, req.Templatecode, req.AggrNo, req.CustomerName, totpaid, req.TransactionSrc, req.Paymentmetodcode, req.Refno, req.Filepath, req.Flagreversal, req.Createdby, req.Createddtm)
 	if errinsPaymentNotifWa != nil {
 		res = models.Respons{
 			ResponseCode:      insPaymentNotifWa.ResponseCode,
@@ -45,10 +73,10 @@ func NotifPaymentWa(aggrno string, datareceice string, req models.NotifPaymentWa
 		// datawano, _, _ := repo.GetReffNo(req.Refno)
 		// req.Refno = datawano.ReffNo
 
-		bodyMsg = "Pembayaran angsuran Esta Dana Ventura Ibu " + req.CustomerName + " dengan no perjanjian " + req.AggrNo + " tanggal " + req.Senddtm + " sebesar " + fmt.Sprintf("%v", req.TotalPaid) + " (no transaksi " + req.Refno + " ) telah diterima. Untuk riwayat pembayaran dapat dilihat pada aplikasi MyEsta, Informasi lebih lanjut serta penyampaian pertanyaan atau keluhan, silahkan menghubungi Whatsapp di no nomor 081212xxxx"
+		bodyMsg = "Pembayaran angsuran Esta Dana Ventura Ibu " + req.CustomerName + " dengan no perjanjian " + req.AggrNo + " tanggal " + outputsenddtm + " sebesar " + fmt.Sprintf("%v", req.TotalPaid) + " (no transaksi " + req.Refno + " ) telah diterima. Untuk riwayat pembayaran dapat dilihat pada aplikasi MyEsta, Informasi lebih lanjut serta penyampaian pertanyaan atau keluhan, silahkan menghubungi Whatsapp di no nomor 081212xxxx"
 	} else {
 		bodyMsg = "Pembayaran angsuran Esta Dana Ventura Ibu " + req.CustomerName + " dengan no perjanjian " + req.AggrNo +
-			" tanggal " + req.Senddtm + " sebesar " + fmt.Sprintf("%v", req.TotalPaid) + " (no transaksi " + req.Refno + " ) gagal tranksasi. Untuk riwayat pembayaran dapat dilihat pada aplikasi MyEsta, Informasi lebih lanjut serta penyampaian pertanyaan atau keluhan, silahkan menghubungi Whatsapp di no nomor 081212xxxx"
+			" tanggal " + outputsenddtm + " sebesar " + fmt.Sprintf("%v", req.TotalPaid) + " (no transaksi " + req.Refno + " ) gagal tranksasi. Untuk riwayat pembayaran dapat dilihat pada aplikasi MyEsta, Informasi lebih lanjut serta penyampaian pertanyaan atau keluhan, silahkan menghubungi Whatsapp di no nomor 081212xxxx"
 	}
 
 	reqtometa := models.InstReqToMeta{
@@ -61,7 +89,7 @@ func NotifPaymentWa(aggrno string, datareceice string, req models.NotifPaymentWa
 	}
 
 	jsnLogMeta, _ := json.Marshal(reqtometa)
-	log.Println("req to meta", string(jsnLogMeta))
+	logger.Println("req to meta", string(jsnLogMeta))
 
 	resfrmeta := models.ResFrMeta{}
 
@@ -93,7 +121,7 @@ func NotifPaymentWa(aggrno string, datareceice string, req models.NotifPaymentWa
 	}
 
 	jsnResMeta, _ := json.Marshal(resfrmeta)
-	log.Println("res fr meta", string(jsnResMeta))
+	logger.Println("res fr meta", string(jsnResMeta))
 
 	if resSendReminder.StatusCode() != 200 {
 
