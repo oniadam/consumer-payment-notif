@@ -15,9 +15,16 @@ import (
 )
 
 func NotifPaymentWa(aggrno string, datareceice string, req models.NotifPaymentWa) (res models.Respons, err error) {
+	var datawano models.GetWaNoRes
+	if req.WaNo == "null" || req.WaNo == "" {
+		datawano, _, _ = repo.GetWaNo(req.AggrNo)
+	} else {
+		datawano.WaNo.String = req.WaNo
+	}
+
 	timeStr := time.Now().Format("2006-01-02 15:04:05")
 	totpaid := fmt.Sprintf("%v", req.TotalPaid)
-	insPaymentNotifWa, errinsPaymentNotifWa := repo.InsertPaymentNotifWaRepo(req.Senddtm, req.Sendby, req.WaNo, req.Templatecode, req.AggrNo, req.CustomerName, totpaid, req.TransactionSrc, req.Paymentmetodcode, req.Refno, req.Filepath, req.Flagreversal, req.Createdby, req.Createddtm)
+	insPaymentNotifWa, errinsPaymentNotifWa := repo.InsertPaymentNotifWaRepo(req.Senddtm, req.Sendby, datawano.WaNo.String, req.Templatecode, req.AggrNo, req.CustomerName, totpaid, req.TransactionSrc, req.Paymentmetodcode, req.Refno, req.Filepath, req.Flagreversal, req.Createdby, req.Createddtm)
 	if errinsPaymentNotifWa != nil {
 		res = models.Respons{
 			ResponseCode:      insPaymentNotifWa.ResponseCode,
@@ -34,9 +41,9 @@ func NotifPaymentWa(aggrno string, datareceice string, req models.NotifPaymentWa
 
 	bodyMsg := ""
 	if req.Flagreversal == "0" {
-		// call sp utk get no reff
-		datawano, _, _ := repo.GetReffNo(req.Refno)
-		req.Refno = datawano.ReffNo
+		// // call sp utk get no reff
+		// datawano, _, _ := repo.GetReffNo(req.Refno)
+		// req.Refno = datawano.ReffNo
 
 		bodyMsg = "Pembayaran angsuran Esta Dana Ventura Ibu " + req.CustomerName + " dengan no perjanjian " + req.AggrNo + " tanggal " + req.Senddtm + " sebesar " + fmt.Sprintf("%v", req.TotalPaid) + " (no transaksi " + req.Refno + " ) telah diterima. Untuk riwayat pembayaran dapat dilihat pada aplikasi MyEsta, Informasi lebih lanjut serta penyampaian pertanyaan atau keluhan, silahkan menghubungi Whatsapp di no nomor 081212xxxx"
 	} else {
@@ -46,7 +53,7 @@ func NotifPaymentWa(aggrno string, datareceice string, req models.NotifPaymentWa
 
 	reqtometa := models.InstReqToMeta{
 		MessagingProduct: "whatsapp",
-		To:               req.WaNo,
+		To:               datawano.WaNo.String,
 		Type:             "text",
 		Text: models.TextBody{
 			Body: bodyMsg,
