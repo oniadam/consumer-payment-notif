@@ -19,6 +19,19 @@ func NotifPaymentWaArray(datareceice string, req []models.NotifPaymentWa, logger
 	timeStr := time.Now().Format("2006-01-02 15:04:05")
 
 	for _, v := range req {
+		// validasi param request ke meta string kosong
+		if v.AggrNo == "" || v.CustomerName == "" || v.Refno == "" || v.CustomerServiceNo == "" {
+			res = models.Respons{
+				ResponseCode:      "500",
+				ResponseMessage:   "Parameter ada yang kosong",
+				ResponseTimestamp: timeStr,
+				Errors:            "",
+				Data:              nil,
+			}
+
+			return res, err
+		}
+
 		if v.Createddtm == "" {
 			v.Createddtm = timeStr
 		}
