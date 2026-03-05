@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func GetWaNo(aggrno string) (res models.GetWaNoRes, resError models.Respons, err error) {
+func GetTemplateCode(code string) (res models.TemplateCodeRes, resError models.Respons, err error) {
 	db, errcon := db.GetsSQLsrvDB3()
 
 	if errcon != nil {
@@ -45,7 +45,7 @@ func GetWaNo(aggrno string) (res models.GetWaNoRes, resError models.Respons, err
 	// Rollback the transaction on function exit
 	defer tx.Rollback()
 
-	err = tx.QueryRowContext(ctx, "exec spe_wa_send_notif_payment_get @pAggrNo=?", aggrno).Scan(&res.CustomerCode, &res.Fullname, &res.WaNo, &res.IdNo)
+	err = tx.QueryRowContext(ctx, "exec spe_get_template_wa @pTypeNotif=?", code).Scan(&res.TemplateCode, &res.LanguageCode)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return res, resError, err

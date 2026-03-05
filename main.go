@@ -27,42 +27,48 @@ func main() {
 		conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
 		if err != nil {
 			logger.Println("Gagal terhubung ke RabbitMQ:", err)
+			// return
 			time.Sleep(5 * time.Second)
 			continue
 		}
 		logger.Println("Terhubung ke RabbitMQ")
 
-		chNotif, err := conn.Channel()
-		if err != nil {
-			logger.Println("Gagal membuka channel:", err)
-			conn.Close()
-			time.Sleep(5 * time.Second)
-			continue
-		}
+		// chNotif, err := conn.Channel()
+		// if err != nil {
+		// 	logger.Println("Gagal membuka channel:", err)
+		// 	conn.Close()
+		// 	time.Sleep(5 * time.Second)
+		// 	continue
+		// }
 
-		err = chNotif.Qos(1, 0, false)
-		if err != nil {
-			logger.Println("Gagal set QoS:", err)
-		}
+		// err = chNotif.Qos(1, 0, false)
+		// if err != nil {
+		// 	logger.Println("Gagal set QoS:", err)
+		// }
 
-		// Jalankan consumer
-		go controllers.PaymentNotif(chNotif, logger)
+		// // Jalankan consumer
+		// go controllers.PaymentNotif(chNotif, logger)
 
 		// kalo mau buat bnyk consumer, buat lagi sperti chNotif
 		// ================== Channel Consumer 2 ==================
 		chNotifWa, err := conn.Channel()
 		if err != nil {
-			logger.Println("Gagal membuka channel PaymentNotifWa:", err)
-			chNotif.Close()
+			// logger.Println("Gagal membuka channel PaymentNotifWa:", err)
+			// chNotifWa.Close()
+			// conn.Close()
+			// time.Sleep(5 * time.Second)
+			// continue
 			conn.Close()
-			time.Sleep(5 * time.Second)
-			continue
+			return
 		}
 		err = chNotifWa.Qos(1, 0, false)
 		if err != nil {
-			logger.Println("Gagal set QoS PaymentNotifWa:", err)
+			// logger.Println("Gagal set QoS PaymentNotifWa:", err)
+			chNotifWa.Close()
+			conn.Close()
+			return
 		}
-		go controllers.PaymentNotifWa(chNotifWa, logger)
+		go controllers.PaymentNotifWaArray(chNotifWa, logger)
 
 		// Tunggu sampai koneksi error
 		errChan := make(chan *amqp.Error)
@@ -75,10 +81,10 @@ func main() {
 		}
 
 		// Tutup koneksi dan tunggu 5 detik sebelum reconnect
-		chNotif.Close() // tutup lgi yg lain klo ada 3 konsmer
+		// chNotif.Close() // tutup lgi yg lain klo ada 3 konsmer
 		chNotifWa.Close()
 		conn.Close()
-		time.Sleep(5 * time.Second)
+		// time.Sleep(5 * time.Second)
 	}
 
 	// log.Println(http.ListenAndServe(":8912", router))

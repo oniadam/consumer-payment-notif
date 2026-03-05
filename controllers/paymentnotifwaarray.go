@@ -11,7 +11,7 @@ import (
 	"github.com/streadway/amqp"
 )
 
-func PaymentNotifWa(ch *amqp.Channel, logger *log.Logger) {
+func PaymentNotifWaArray(ch *amqp.Channel, logger *log.Logger) {
 	msgs, err := ch.Consume(
 		"paymentnotificationwa_queue",
 		"",
@@ -27,7 +27,7 @@ func PaymentNotifWa(ch *amqp.Channel, logger *log.Logger) {
 		return
 	}
 
-	data := models.NotifPaymentWa{}
+	data := []models.NotifPaymentWa{}
 
 	for d := range msgs {
 
@@ -46,7 +46,7 @@ func PaymentNotifWa(ch *amqp.Channel, logger *log.Logger) {
 				return
 			}
 			datareceive := string(d.Body)
-			resp, errSend := services.NotifPaymentWa(data.AggrNo, datareceive, data, logger)
+			resp, errSend := services.NotifPaymentWaArray(datareceive, data, logger)
 			fmt.Println("wefhwoehfowiehofwihefwewa", resp.ResponseCode)
 			fmt.Println("wefhwoehfowiehofwihefwewa", resp.ResponseMessage)
 			fmt.Println("wefhwoehfowiehofwihefwewa", resp.Errors)

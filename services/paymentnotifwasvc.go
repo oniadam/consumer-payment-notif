@@ -3,6 +3,7 @@ package services
 import (
 	"consumer-payment-notif/models"
 	"consumer-payment-notif/repo"
+	"consumer-payment-notif/utils"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -16,12 +17,13 @@ import (
 
 func NotifPaymentWa(aggrno string, datareceice string, req models.NotifPaymentWa, logger *log.Logger) (res models.Respons, err error) {
 	timeStr := time.Now().Format("2006-01-02 15:04:05")
-	var datawano models.GetWaNoRes
-	if req.WaNo == "null" || req.WaNo == "" {
-		datawano, _, _ = repo.GetWaNo(req.AggrNo)
-	} else {
-		datawano.WaNo.String = req.WaNo
-	}
+	// var datawano models.GetWaNoRes
+	// if req.WaNo == "null" || req.WaNo == "" {
+	// 	datawano, _, _ = repo.GetWaNo(req.AggrNo)
+	// } else {
+	// 	datawano, _, _ = repo.GetWaNo(req.AggrNo)
+	// 	datawano.WaNo.String = req.WaNo
+	// }
 
 	if req.Createddtm == "" {
 		req.Createddtm = timeStr
@@ -46,13 +48,97 @@ func NotifPaymentWa(aggrno string, datareceice string, req models.NotifPaymentWa
 
 	}
 
-	// format sesuai kebutuhan
-	outputsenddtm := t.Format("2006-01-02 15:04:05")
-	// fmt.Println(output)
+	bulanIndo := map[time.Month]string{
+		time.January:   "Januari",
+		time.February:  "Februari",
+		time.March:     "Maret",
+		time.April:     "April",
+		time.May:       "Mei",
+		time.June:      "Juni",
+		time.July:      "Juli",
+		time.August:    "Agustus",
+		time.September: "September",
+		time.October:   "Oktober",
+		time.November:  "November",
+		time.December:  "Desember",
+	}
+
+	outputsenddtmwa := fmt.Sprintf("%d %s %d",
+		t.Day(),
+		bulanIndo[t.Month()],
+		t.Year(),
+	)
+
+	outputsenddtmdb := t.Format("2006-01-02 15:04:05")
 
 	totpaid := fmt.Sprintf("%v", req.TotalPaid)
+	totpaid = utils.FormatRupiah(totpaid)
 
-	insPaymentNotifWa, errinsPaymentNotifWa := repo.InsertPaymentNotifWaRepo(outputsenddtm, req.Sendby, datawano.WaNo.String, req.Templatecode, req.AggrNo, req.CustomerName, totpaid, req.TransactionSrc, req.Paymentmetodcode, req.Refno, req.Filepath, req.Flagreversal, req.Createdby, req.Createddtm)
+	// bodyMsg := ""
+	reqtometa := models.NotifPaymentTemplateToMetaFbReq{}
+	if req.Flagreversal == "0" {
+
+		// datatempcode, _, _ := repo.GetTemplateCode("notif_payment")
+		// fmt.Println(datatempcode)
+		// req.Templatecode = datatempcode.TemplateCode
+		reqtometa = models.NotifPaymentTemplateToMetaFbReq{
+			MessagingProduct: "whatsapp",
+			To:               req.WaNo,
+			Type:             "template",
+			Template: models.NotifPaymentTemplates{
+				Name: req.Templatecode,
+				LanguageS: models.LanguageS{
+					Code: req.LanguageCode,
+				},
+				ComponentsS: []models.ComponentS{
+					{
+						Type: "body",
+						Parameters: []models.ParameterS{
+							{Type: "text", Text: req.CustomerName},
+							{Type: "text", Text: req.AggrNo},
+							{Type: "text", Text: outputsenddtmwa},
+							{Type: "text", Text: totpaid},
+							{Type: "text", Text: req.Refno},
+							{Type: "text", Text: req.CustomerServiceNo},
+						},
+					},
+				},
+			},
+		}
+
+	} else {
+
+		// datatempcode, _, _ := repo.GetTemplateCode("notif_reversal_payment")
+		// fmt.Println(datatempcode)
+		// req.Templatecode = datatempcode.TemplateCode
+		reqtometa = models.NotifPaymentTemplateToMetaFbReq{
+			MessagingProduct: "whatsapp",
+			To:               req.WaNo,
+			Type:             "template",
+			Template: models.NotifPaymentTemplates{
+				Name: req.Templatecode,
+				LanguageS: models.LanguageS{
+					Code: req.LanguageCode,
+				},
+				ComponentsS: []models.ComponentS{
+					{
+						Type: "body",
+						Parameters: []models.ParameterS{
+							{Type: "text", Text: req.CustomerName},
+							{Type: "text", Text: req.AggrNo},
+							{Type: "text", Text: outputsenddtmwa},
+							{Type: "text", Text: totpaid},
+							{Type: "text", Text: req.Refno},
+							{Type: "text", Text: req.CustomerServiceNo},
+						},
+					},
+				},
+			},
+		}
+
+	}
+
+	insPaymentNotifWa, errinsPaymentNotifWa := repo.InsertPaymentNotifWaRepo(outputsenddtmdb, req.Sendby, req.WaNo, req.Templatecode, req.AggrNo, req.CustomerName, fmt.Sprintf("%v", req.TotalPaid), req.TransactionSrc, req.Paymentmetodcode, req.Refno, req.Filepath, req.Flagreversal, req.Createdby, req.Createddtm)
 	if errinsPaymentNotifWa != nil {
 		res = models.Respons{
 			ResponseCode:      insPaymentNotifWa.ResponseCode,
@@ -65,27 +151,6 @@ func NotifPaymentWa(aggrno string, datareceice string, req models.NotifPaymentWa
 		// c.JSON(500, res)
 
 		return res, errinsPaymentNotifWa
-	}
-
-	bodyMsg := ""
-	if req.Flagreversal == "0" {
-		// // call sp utk get no reff
-		// datawano, _, _ := repo.GetReffNo(req.Refno)
-		// req.Refno = datawano.ReffNo
-
-		bodyMsg = "Pembayaran angsuran Esta Dana Ventura Ibu " + req.CustomerName + " dengan no perjanjian " + req.AggrNo + " tanggal " + outputsenddtm + " sebesar " + fmt.Sprintf("%v", req.TotalPaid) + " (no transaksi " + req.Refno + " ) telah diterima. Untuk riwayat pembayaran dapat dilihat pada aplikasi MyEsta, Informasi lebih lanjut serta penyampaian pertanyaan atau keluhan, silahkan menghubungi Whatsapp di no nomor 081212xxxx"
-	} else {
-		bodyMsg = "Pembayaran angsuran Esta Dana Ventura Ibu " + req.CustomerName + " dengan no perjanjian " + req.AggrNo +
-			" tanggal " + outputsenddtm + " sebesar " + fmt.Sprintf("%v", req.TotalPaid) + " (no transaksi " + req.Refno + " ) gagal tranksasi. Untuk riwayat pembayaran dapat dilihat pada aplikasi MyEsta, Informasi lebih lanjut serta penyampaian pertanyaan atau keluhan, silahkan menghubungi Whatsapp di no nomor 081212xxxx"
-	}
-
-	reqtometa := models.InstReqToMeta{
-		MessagingProduct: "whatsapp",
-		To:               datawano.WaNo.String,
-		Type:             "text",
-		Text: models.TextBody{
-			Body: bodyMsg,
-		},
 	}
 
 	jsnLogMeta, _ := json.Marshal(reqtometa)
@@ -167,6 +232,60 @@ func NotifPaymentWa(aggrno string, datareceice string, req models.NotifPaymentWa
 		// c.JSON(http.StatusInternalServerError, res)
 		return res, err
 	}
+
+	// get token fcm user
+
+	// request ke notif myesta mobile
+	reqMyEsta := models.NotifMyestaReq{}
+	if req.Flagreversal == "0" {
+		reqMyEsta = models.NotifMyestaReq{
+			IdNo:             req.IdNo,
+			Token:            "",
+			Title:            "Pembayaran Berhasil",
+			ShortDescription: "Pembayaran Berhasil",
+			FullDescription:  "Terimakasih telah melakukan pembayaran sebesar " + totpaid + " untuk no kontrak " + req.AggrNo,
+			ResponseFcm:      "",
+			Timestamp:        0,
+			DeviceId:         "",
+			CreatedBy:        req.Sendby,
+		}
+	} else {
+		reqMyEsta = models.NotifMyestaReq{
+			IdNo:             req.IdNo,
+			Token:            "",
+			Title:            "Pembayaran Gagal",
+			ShortDescription: "Pembayaran Gagal",
+			FullDescription:  "Gagal melakukan transaksi sebesar " + totpaid + " untuk no kontrak " + req.AggrNo,
+			ResponseFcm:      "",
+			Timestamp:        0,
+			DeviceId:         "",
+			CreatedBy:        req.Sendby,
+		}
+	}
+
+	jsnReqMyesta, _ := json.Marshal(reqMyEsta)
+	logger.Println("req to myesta", string(jsnReqMyesta))
+
+	resSendMyEsta, errSendMyEsta := restyClient.R().
+		SetContext(ctx).
+		SetBody(&reqMyEsta).
+		SetHeader("Content-Type", "application/json").
+		SetResult(&res).
+		Post(os.Getenv("url_notif_myesta"))
+
+	if errSendMyEsta != nil {
+		res = models.Respons{
+			ResponseCode:      "500",
+			ResponseMessage:   "Internal Server Error",
+			ResponseTimestamp: time.Now().Format("2006-01-02 15:04:05"),
+			Errors:            errSendMyEsta.Error(),
+			Data:              nil,
+		}
+		// c.JSON(http.StatusInternalServerError, res)
+		return res, errSendMyEsta
+	}
+
+	logger.Println("resp myesta", string(resSendMyEsta.Body()))
 
 	res = models.Respons{
 		ResponseCode:      "200",
