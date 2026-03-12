@@ -17,6 +17,7 @@ type NotifPaymentWa struct {
 	RefNoWa           string  `json:"refNoWa"`
 	Filepath          string  `json:"filepath"`
 	Flagreversal      string  `json:"flagreversal"`
+	SenderHpNo        string  `json:"senderHpNo"`
 	Createdby         string  `json:"createdby"`
 	Createddtm        string  `json:"createddtm"`
 }

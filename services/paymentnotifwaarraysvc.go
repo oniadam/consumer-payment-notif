@@ -88,6 +88,7 @@ func NotifPaymentWaArray(datareceice string, req []models.NotifPaymentWa, logger
 			// datatempcode, _, _ := repo.GetTemplateCode("notif_payment")
 			// fmt.Println(datatempcode)
 			// req.Templatecode = datatempcode.TemplateCode
+
 			reqtometa = models.NotifPaymentTemplateToMetaFbReq{
 				MessagingProduct: "whatsapp",
 				To:               v.WaNo,
@@ -118,6 +119,7 @@ func NotifPaymentWaArray(datareceice string, req []models.NotifPaymentWa, logger
 			// datatempcode, _, _ := repo.GetTemplateCode("notif_reversal_payment")
 			// fmt.Println(datatempcode)
 			// req.Templatecode = datatempcode.TemplateCode
+
 			reqtometa = models.NotifPaymentTemplateToMetaFbReq{
 				MessagingProduct: "whatsapp",
 				To:               v.WaNo,
@@ -164,8 +166,16 @@ func NotifPaymentWaArray(datareceice string, req []models.NotifPaymentWa, logger
 		logger.Println("req to meta", string(jsnLogMeta))
 
 		resfrmeta := models.ResFrMeta{}
+		var urlkemata, tokenkemeta string
 
-		// save req data meta ke db
+		// cek ukm/mikro
+		if v.SenderHpNo == "6282277566818" {
+			urlkemata = os.Getenv("url_meta_mikro")
+			tokenkemeta = os.Getenv("token_meta_mikro")
+		} else {
+			urlkemata = os.Getenv("url_meta_ukm")
+			tokenkemeta = os.Getenv("token_meta_ukm")
+		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
@@ -175,10 +185,10 @@ func NotifPaymentWaArray(datareceice string, req []models.NotifPaymentWa, logger
 			SetContext(ctx).
 			SetBody(&reqtometa).
 			SetHeader("Content-Type", "application/json").
-			SetHeader("Authorization", os.Getenv("token_meta")).
+			SetHeader("Authorization", tokenkemeta).
 			SetResult(&resfrmeta).
 			// SetError(&resfrmetaerr).
-			Post(os.Getenv("url_meta"))
+			Post(urlkemata)
 
 		if errSend != nil {
 			res = models.Respons{
@@ -249,8 +259,8 @@ func NotifPaymentWaArray(datareceice string, req []models.NotifPaymentWa, logger
 				IdNo:             v.IdNo,
 				Token:            "",
 				Title:            "Pembayaran Berhasil",
-				ShortDescription: "Pembayaran Berhasil",
-				FullDescription:  "Terimakasih telah melakukan pembayaran sebesar " + totpaid + " untuk no kontrak " + v.AggrNo,
+				ShortDescription: "Pembayaran angsuran ESTA Dana Ventura telah kami terima",
+				FullDescription:  "Pembayaran Diterima<br><br>Pembayaran angsuran ESTA Dana Ventura atas nama Ibu " + v.CustomerName + " dengan nomor perjanjian " + v.AggrNo + " pada tanggal " + v.Senddtm + " sebesar Rp. " + totpaid + " (Nomor Transaksi: " + v.Refno + ") telah kami terima.<br><brRiwayat pembayaran dapat dilihat melalui menu Riwayat Transaksi, dan data pada kartu piutang akan diperbarui maksimal H+1 setelah pembayaran berhasil dilakukan.<br><brUntuk informasi lebih lanjut, pertanyaan, maupun keluhan, silakan menghubungi hotline kami melalui WhatsApp di 082123518087.<br><brTerimakasih.",
 				ResponseFcm:      "",
 				Timestamp:        0,
 				DeviceId:         "",
@@ -261,8 +271,8 @@ func NotifPaymentWaArray(datareceice string, req []models.NotifPaymentWa, logger
 				IdNo:             v.IdNo,
 				Token:            "",
 				Title:            "Pembayaran Gagal",
-				ShortDescription: "Pembayaran Gagal",
-				FullDescription:  "Gagal melakukan transaksi sebesar " + totpaid + " untuk no kontrak " + v.AggrNo,
+				ShortDescription: "Pembayaran angsuran ESTA Dana Ventura belum berhasil diproses/gagal",
+				FullDescription:  "Pembayaran Gagal<br><brPembayaran angsuran ESTA Dana Ventura atas nama Ibu " + v.CustomerName + " dengan nomor perjanjian " + v.AggrNo + " pada tanggal " + v.Senddtm + " sebesar Rp. " + totpaid + " (Nomor Transaksi: " + v.Refno + ") belum berhasil diproses/gagal<br><brnUntuk informasi lebih lanjut, pertanyaan, maupun keluhan, silakan menghubungi hotline kami melalui WhatsApp di 082123518087.<br><brTerima kasih.",
 				ResponseFcm:      "",
 				Timestamp:        0,
 				DeviceId:         "",
