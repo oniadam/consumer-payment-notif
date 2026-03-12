@@ -69,7 +69,7 @@ func PaymentNotifWaArray(ch *amqp.Channel, logger *log.Logger) {
 					d.RoutingKey, // sama dengan queue
 					false,
 					false,
-					amqp.Publishing{
+					amqp.Publishing{	
 						ContentType: "application/json",
 						Body:        d.Body,
 					},
