@@ -169,7 +169,7 @@ func NotifPaymentWaArray(datareceice string, req []models.NotifPaymentWa, logger
 		var urlkemata, tokenkemeta string
 
 		// cek ukm/mikro
-		if v.SenderHpNo == "6282277566818" {
+		if v.SenderHpNo == "6282277566818" || v.SenderHpNo == "082277566818" {
 			urlkemata = os.Getenv("url_meta_mikro")
 			tokenkemeta = os.Getenv("token_meta_mikro")
 		} else {
@@ -260,7 +260,7 @@ func NotifPaymentWaArray(datareceice string, req []models.NotifPaymentWa, logger
 				Token:            "",
 				Title:            "Pembayaran Berhasil",
 				ShortDescription: "Pembayaran angsuran ESTA Dana Ventura telah kami terima",
-				FullDescription:  "Pembayaran Diterima<br><br>Pembayaran angsuran ESTA Dana Ventura atas nama Ibu " + v.CustomerName + " dengan nomor perjanjian " + v.AggrNo + " pada tanggal " + v.Senddtm + " sebesar Rp. " + totpaid + " (Nomor Transaksi: " + v.Refno + ") telah kami terima.<br><brRiwayat pembayaran dapat dilihat melalui menu Riwayat Transaksi, dan data pada kartu piutang akan diperbarui maksimal H+1 setelah pembayaran berhasil dilakukan.<br><brUntuk informasi lebih lanjut, pertanyaan, maupun keluhan, silakan menghubungi hotline kami melalui WhatsApp di 082123518087.<br><brTerimakasih.",
+				FullDescription:  "Pembayaran Diterima<br><br>Pembayaran angsuran ESTA Dana Ventura atas nama Ibu " + v.CustomerName + " dengan nomor perjanjian " + v.AggrNo + " pada tanggal " + outputsenddtmwa + " sebesar Rp. " + totpaid + " (Nomor Transaksi: " + v.Refno + ") telah kami terima.<br><br>Riwayat pembayaran dapat dilihat melalui menu Riwayat Transaksi, dan data pada kartu piutang akan diperbarui maksimal H+1 setelah pembayaran berhasil dilakukan.<br><br>Untuk informasi lebih lanjut, pertanyaan, maupun keluhan, silakan menghubungi hotline kami melalui WhatsApp di " + v.CustomerServiceNo + " .<br><br>Terimakasih.",
 				ResponseFcm:      "",
 				Timestamp:        0,
 				DeviceId:         "",
@@ -272,7 +272,7 @@ func NotifPaymentWaArray(datareceice string, req []models.NotifPaymentWa, logger
 				Token:            "",
 				Title:            "Pembayaran Gagal",
 				ShortDescription: "Pembayaran angsuran ESTA Dana Ventura belum berhasil diproses/gagal",
-				FullDescription:  "Pembayaran Gagal<br><brPembayaran angsuran ESTA Dana Ventura atas nama Ibu " + v.CustomerName + " dengan nomor perjanjian " + v.AggrNo + " pada tanggal " + v.Senddtm + " sebesar Rp. " + totpaid + " (Nomor Transaksi: " + v.Refno + ") belum berhasil diproses/gagal<br><brnUntuk informasi lebih lanjut, pertanyaan, maupun keluhan, silakan menghubungi hotline kami melalui WhatsApp di 082123518087.<br><brTerima kasih.",
+				FullDescription:  "Pembayaran Gagal<br><br>Pembayaran angsuran ESTA Dana Ventura atas nama Ibu " + v.CustomerName + " dengan nomor perjanjian " + v.AggrNo + " pada tanggal " + outputsenddtmwa + " sebesar Rp. " + totpaid + " (Nomor Transaksi: " + v.Refno + ") belum berhasil diproses/gagal<br><br>nUntuk informasi lebih lanjut, pertanyaan, maupun keluhan, silakan menghubungi hotline kami melalui WhatsApp di " + v.CustomerServiceNo + ".<br><br>Terima kasih.",
 				ResponseFcm:      "",
 				Timestamp:        0,
 				DeviceId:         "",
