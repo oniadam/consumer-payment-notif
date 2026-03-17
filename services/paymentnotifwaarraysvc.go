@@ -272,7 +272,7 @@ func NotifPaymentWaArray(datareceice string, req []models.NotifPaymentWa, logger
 				Token:            "",
 				Title:            "Pembayaran Gagal",
 				ShortDescription: "Pembayaran angsuran ESTA Dana Ventura belum berhasil diproses/gagal",
-				FullDescription:  "Pembayaran Gagal<br><br>Pembayaran angsuran <b>ESTA Dana Ventura</b> atas nama Ibu <b>" + v.CustomerName + "</b> dengan nomor perjanjian " + v.AggrNo + " pada tanggal <b>" + outputsenddtmwa + "</b> sebesar Rp. " + totpaid + " (Nomor Transaksi: <b>" + v.Refno + "</b>) belum berhasil diproses/gagal<br><br>nUntuk informasi lebih lanjut, pertanyaan, maupun keluhan, silakan menghubungi hotline kami melalui WhatsApp di <b>" + v.CustomerServiceNo + "</b>.<br><br>Terima kasih.",
+				FullDescription:  "Pembayaran Gagal<br><br>Pembayaran angsuran <b>ESTA Dana Ventura</b> atas nama Ibu <b>" + v.CustomerName + "</b> dengan nomor perjanjian <b>" + v.AggrNo + "</b> pada tanggal <b>" + outputsenddtmwa + "</b> sebesar Rp. " + totpaid + " (Nomor Transaksi: <b>" + v.Refno + "</b>) belum berhasil diproses/gagal<br><br>Untuk informasi lebih lanjut, pertanyaan, maupun keluhan, silakan menghubungi hotline kami melalui WhatsApp di <b>" + v.CustomerServiceNo + "</b>.<br><br>Terima kasih.",
 				ResponseFcm:      "",
 				Timestamp:        0,
 				DeviceId:         "",
