@@ -169,7 +169,7 @@ func NotifPaymentWaArray(datareceice string, req []models.NotifPaymentWa, logger
 		var urlkemata, tokenkemeta string
 
 		// cek ukm/mikro
-		if v.SenderHpNo == "6282277566818" || v.SenderHpNo == "082277566818" {
+		if v.SenderHpNo == os.Getenv("senderHpNo1") || v.SenderHpNo == os.Getenv("senderHpNo2") {
 			urlkemata = os.Getenv("url_meta_mikro")
 			tokenkemeta = os.Getenv("token_meta_mikro")
 		} else {
