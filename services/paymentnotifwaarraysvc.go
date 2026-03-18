@@ -79,6 +79,7 @@ func NotifPaymentWaArray(datareceice string, req []models.NotifPaymentWa, logger
 		outputsenddtmdb := t.Format("2006-01-02 15:04:05")
 
 		totpaid := fmt.Sprintf("%v", v.TotalPaid)
+		totpaidsdb := strconv.FormatFloat(v.TotalPaid, 'f', 0, 64)
 		totpaid = utils.FormatRupiah(totpaid)
 
 		// bodyMsg := ""
@@ -147,7 +148,7 @@ func NotifPaymentWaArray(datareceice string, req []models.NotifPaymentWa, logger
 
 		}
 
-		insPaymentNotifWa, errinsPaymentNotifWa := repo.InsertPaymentNotifWaRepo(outputsenddtmdb, v.Sendby, v.WaNo, v.Templatecode, v.AggrNo, v.CustomerName, fmt.Sprintf("%v", v.TotalPaid), v.TransactionSrc, v.Paymentmetodcode, v.Refno, v.Filepath, v.Flagreversal, v.Createdby, v.Createddtm)
+		insPaymentNotifWa, errinsPaymentNotifWa := repo.InsertPaymentNotifWaRepo(outputsenddtmdb, v.Sendby, v.WaNo, v.Templatecode, v.AggrNo, v.CustomerName, totpaidsdb, v.TransactionSrc, v.Paymentmetodcode, v.Refno, v.Filepath, v.Flagreversal, v.Createdby, v.Createddtm)
 		if errinsPaymentNotifWa != nil {
 			res = models.Respons{
 				ResponseCode:      insPaymentNotifWa.ResponseCode,
