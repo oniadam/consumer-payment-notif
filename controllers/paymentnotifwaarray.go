@@ -86,7 +86,7 @@ func PaymentNotifWaArray(ch *amqp.Channel, logger *log.Logger) {
 			}
 
 			// gunakan kalo mau delay kirim pesan
-			time.Sleep(15 * time.Second)
+			time.Sleep(3 * time.Second)
 
 			d.Ack(false)
 		}()
