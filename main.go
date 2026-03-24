@@ -21,7 +21,12 @@ func main() {
 
 	// log := utils.InitLogger()
 
-	logger := utils.SetupLogger()
+	// logger := utils.SetupLogger()
+	utils.RotateLogger()     // init pertama
+	utils.StartLogRotation() // auto rotate tiap 00:00
+
+	logger := utils.GetLogger()
+
 	// router := gin.Default()
 	for {
 		conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
