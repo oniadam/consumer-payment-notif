@@ -9,9 +9,17 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
+)
+
+var (
+	currentLogFile *os.File
+	currentDate    string
+	logger         *log.Logger
+	mu             sync.Mutex
 )
 
 type customResponseWriter struct {
@@ -136,18 +144,99 @@ func InitLogger() *log.Logger {
 }
 
 func SetupLogger() *log.Logger {
-	// Pastikan folder logs ada
+	mu.Lock()
+	defer mu.Unlock()
+
+	dateNow := time.Now().Format("2006-01-02")
+
+	// Jika logger belum ada atau tanggal berubah
+	if logger == nil || currentDate != dateNow {
+
+		// Tutup file lama
+		if currentLogFile != nil {
+			currentLogFile.Close()
+		}
+
+		// Pastikan folder logs ada
+		if _, err := os.Stat("logs"); os.IsNotExist(err) {
+			os.Mkdir("logs", 0755)
+		}
+
+		filename := filepath.Join("logs", "consumer_"+dateNow+".log")
+
+		file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			log.Fatalf("Gagal buka log file: %v", err)
+		}
+
+		currentLogFile = file
+		currentDate = dateNow
+		logger = log.New(file, "", log.LstdFlags)
+	}
+
+	return logger
+}
+
+func RotateLogger() {
+	mu.Lock()
+	defer mu.Unlock()
+
+	dateNow := time.Now().Format("2006-01-02")
+
+	// kalau tanggal sama → skip
+	if currentDate == dateNow {
+		return
+	}
+
+	// tutup file lama
+	if currentLogFile != nil {
+		currentLogFile.Close()
+	}
+
+	// pastikan folder ada
 	if _, err := os.Stat("logs"); os.IsNotExist(err) {
 		os.Mkdir("logs", 0755)
 	}
 
-	filename := filepath.Join("logs", "consumer_"+time.Now().Format("2006-01-02")+".log")
+	filename := filepath.Join("logs", "consumer_"+dateNow+".log")
 
-	file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
 		log.Fatalf("Gagal buka log file: %v", err)
 	}
 
-	logger := log.New(file, "", log.LstdFlags)
+	currentLogFile = file
+	currentDate = dateNow
+
+	if logger == nil {
+		logger = log.New(file, "", log.LstdFlags)
+	} else {
+		logger.SetOutput(file)
+	}
+
+	logger.Println("=== NEW LOG FILE CREATED ===")
+}
+
+func GetLogger() *log.Logger {
 	return logger
+}
+
+func StartLogRotation() {
+	go func() {
+		for {
+			now := time.Now()
+
+			// hitung durasi ke jam 00:00 berikutnya
+			nextMidnight := time.Date(
+				now.Year(), now.Month(), now.Day()+1,
+				0, 0, 0, 0, now.Location(),
+			)
+
+			duration := nextMidnight.Sub(now)
+
+			time.Sleep(duration)
+
+			RotateLogger() // paksa buat file baru
+		}
+	}()
 }
