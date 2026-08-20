@@ -4,7 +4,6 @@ import (
 	"consumer-payment-notif/models"
 	"consumer-payment-notif/services"
 	"encoding/json"
-	"fmt"
 	"log"
 	"time"
 
@@ -42,14 +41,16 @@ func PaymentNotifWaArray(ch *amqp.Channel, logger *log.Logger) {
 			logger.Println("Pesan yang diterima:", string(d.Body)+"queueName : paymentnotificationwa_queue")
 			errs := json.Unmarshal(d.Body, &data)
 			if errs != nil {
-				fmt.Println("Error unmarshaling JSON:", err)
+				logger.Println("Error unmarshaling JSON:", errs.Error())
+				d.Nack(false, false) // supaya msk ke error queue
+				// break
 				return
 			}
 			datareceive := string(d.Body)
 			resp, errSend := services.NotifPaymentWaArray(datareceive, data, logger)
-			fmt.Println("wefhwoehfowiehofwihefwewa", resp.ResponseCode)
-			fmt.Println("wefhwoehfowiehofwihefwewa", resp.ResponseMessage)
-			fmt.Println("wefhwoehfowiehofwihefwewa", resp.Errors)
+			logger.Println("wefhwoehfowiehofwihefwewa", resp.ResponseCode)
+			logger.Println("wefhwoehfowiehofwihefwewa", resp.ResponseMessage)
+			logger.Println("wefhwoehfowiehofwihefwewa", resp.Errors)
 			if errSend != nil {
 				logger.Println(errSend.Error())
 				// d.Nack(false, true)
@@ -69,13 +70,13 @@ func PaymentNotifWaArray(ch *amqp.Channel, logger *log.Logger) {
 					d.RoutingKey, // sama dengan queue
 					false,
 					false,
-					amqp.Publishing{	
+					amqp.Publishing{
 						ContentType: "application/json",
 						Body:        d.Body,
 					},
 				)
 				if err != nil {
-					logger.Println("Gagal requeue manual:", err)
+					logger.Println("Gagal requeue manual:", err.Error())
 					d.Nack(false, true)
 					return
 				} else {
